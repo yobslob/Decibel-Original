@@ -206,9 +206,6 @@ export const followOrUnfollow = async (req, res) => {
         const user = await User.findById(req.user._id);
         const targetUser = await User.findById(req.params.id);
 
-        console.log(user);
-        console.log(targetUser);
-
         if (!req.user._id || !req.params.id) {
             return res.status(404).json({
                 message: "User not found.",

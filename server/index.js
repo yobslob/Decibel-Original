@@ -4,6 +4,8 @@ import { configDotenv } from "dotenv";
 import { connectDB } from "./config/db.js";
 import cookieParser from "cookie-parser";
 import userRoute from "./routes/user.route.js"
+import postRoute from "./routes/post.route.js"
+
 
 configDotenv();
 
@@ -24,6 +26,7 @@ app.use(express.json());
 app.use(urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use('/api/v1/user', userRoute);
+app.use('/api/v1/post', postRoute)
 
 connectDB().then(() => {
     app.listen(PORT, () => {
