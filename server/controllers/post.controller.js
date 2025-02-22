@@ -1,8 +1,8 @@
 import sharp from "sharp";
 import cloudinary from "../config/cloudinary.js";
-import Post from "../models/post.model.js";
+import { Post } from "../models/post.model.js";
 import { User } from "../models/user.model.js";
-import Comment from "../models/comment.model.js";
+import { Comment } from "../models/comment.model.js";
 
 export const addNewPost = async (req, res) => {
     try {
@@ -190,7 +190,7 @@ export const dislikePost = async (req, res) => {
 
     } catch (error) {
         console.error("error while unliking the post.", error);
-        res.status(400).json({
+        return res.status(400).json({
             message: "Could not unlike User's post.",
             success: false
         });

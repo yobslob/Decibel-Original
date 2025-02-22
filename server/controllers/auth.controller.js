@@ -3,6 +3,7 @@ import { User } from "../models/user.model.js";
 import { generateToken } from "../utils/token.js";
 import getDataUri from "../utils/dataUri.js";
 import cloudinary from "../config/cloudinary.js";
+import { Post } from "../models/post.model.js";
 
 
 export const signIn = async (req, res) => {
@@ -67,6 +68,19 @@ export const login = async (req, res) => {
             });
         }
 
+        //populate each post if present in the array
+        const populatedPosts = await Promise.all(
+            user.posts.map(async (postId) => {
+                const post = await Post.findById(postId);
+                if (post.author.equals(user._id)) {
+                    return post;
+                }
+                return null;
+            })
+        )
+
+        const token = generateToken(user._id);
+
         user = {
             _id: user._id,
             username: user.username,
@@ -75,10 +89,9 @@ export const login = async (req, res) => {
             bio: user.bio,
             followers: user.followers,
             following: user.following,
-            posts: user.posts
+            posts: populatedPosts
         }
 
-        const token = generateToken(user._id);
         res.cookie('token', token, {
             httpOnly: true,
             sameSite: 'strict',
@@ -92,6 +105,11 @@ export const login = async (req, res) => {
 
     } catch (error) {
         console.error("login error: ", error);
+        return res.status(500).json({
+            message: "Internal server error.",
+            success: false
+        });
+
     }
 }
 

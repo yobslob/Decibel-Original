@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const dmSchema = new mongoose.Schema({
+const messageSchema = new mongoose.Schema({
     senderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -18,5 +18,4 @@ const dmSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-const Dm = mongoose.model("Dm", dmSchema);
-export default Dm;
+export const Message = mongoose.model("Message", messageSchema);
