@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import Input from './ui/input';
-import Button from './ui/button';
+import { useNavigate } from 'react-router-dom';
+import Input from '../ui/input.jsx';
+import Button from '../ui/Button.jsx';
+import { useAuth } from '@/context/authContext.jsx';
 
 const Login = ({ onToggle }) => {
+    const navigate = useNavigate();
+    const { login } = useAuth();
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -24,29 +28,10 @@ const Login = ({ onToggle }) => {
         setErrors({});
 
         try {
-            const response = await fetch('http://localhost:3000/api/v1/user/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(formData),
-                credentials: 'include' // Important for cookie handling
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setErrors({ general: data.message });
-                return;
-            }
-
-            // Handle successful login
-            alert(data.message); // You might want to replace this with a better UI notification
-            // You can store user data in context/state management here
-            window.location.href = '/dashboard'; // Or use your routing solution
+            const data = await login(formData);
+            navigate('/feed');
         } catch (error) {
-            setErrors({ general: 'Failed to connect to the server. Please try again.' });
+            setErrors({ general: error.message });
         } finally {
             setLoading(false);
         }

@@ -18,5 +18,4 @@ const Button = ({ children, loading, ...props }) => (
   </button>
 );
 
-
 export default Button;

@@ -76,6 +76,7 @@ export const getFeed = async (req, res) => {
                 select: 'username profilePicture'
             }
         });
+
         return res.status(200).json({
             posts,
             success: true
@@ -141,13 +142,14 @@ export const likePost = async (req, res) => {
         }
 
         //like logic (new : true updates in the database instead of post.save())
-        await Post.findByIdAndUpdate(postId, { $addToSet: { likes: userId } }, { new: true });
+        const updatedPost = await Post.findByIdAndUpdate(postId, { $addToSet: { likes: userId } }, { new: true }).populate('author', 'username profilePicture');
 
         //real time notif socket.io
 
         return res.status(200).json({
             message: "Post liked.",
-            success: true
+            success: true,
+            post: updatedPost
         });
 
     } catch (error) {
@@ -178,14 +180,15 @@ export const dislikePost = async (req, res) => {
         }
 
         //dislike logic
-        await Post.findByIdAndUpdate(postId, { $pull: { likes: userId } }, { new: true });
+        const updatedPost = await Post.findByIdAndUpdate(postId, { $pull: { likes: userId } }, { new: true }).populate('author', 'username profilePicture');
 
         //real time notif socket.io
 
 
         return res.status(200).json({
             message: "Post unliked.",
-            success: true
+            success: true,
+            post: updatedPost
         });
 
     } catch (error) {
@@ -319,16 +322,22 @@ export const deletePost = async (req, res) => {
 export const bookmarkPost = async (req, res) => {
     try {
         const postId = req.params.id;
-        const authorId = req.user._id.toString();
+        const userId = req.user._id;
 
-        const post = await Post.findById(postId);
+        // Find both user and post in parallel
+        const [user, post] = await Promise.all([
+            User.findById(userId),
+            Post.findById(postId)
+        ]);
+
+        // Validate existence
         if (!post) {
             return res.status(404).json({
                 message: "Post not found.",
                 success: false
-            })
+            });
         }
-        const user = await User.findById(authorId);
+
         if (!user) {
             return res.status(404).json({
                 message: "User not found.",
@@ -336,31 +345,30 @@ export const bookmarkPost = async (req, res) => {
             });
         }
 
-        if (user.bookmarks.includes(post._id)) {
-            await user.updateOne({ $pull: { bookmarks: postId } });
-            await user.save();
+        const isBookmarked = user.bookmarks.includes(postId);
 
-            return res.status(200).json({
-                type: 'unsaved',
-                message: "Post is unbookmarked.",
-                success: true
-            });
-        } else {
-            await user.updateOne({ $addToSet: { bookmarks: postId } });
-            await user.save();
+        // Update user bookmarks
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                [isBookmarked ? '$pull' : '$addToSet']: { bookmarks: postId }
+            },
+            { new: true }
+        );
 
-            return res.status(200).json({
-                type: 'saved',
-                message: "Post is bookmarked.",
-                success: true
-            });
-        }
+        // Return updated status
+        return res.status(200).json({
+            type: isBookmarked ? 'unsaved' : 'saved',
+            message: isBookmarked ? "Post is unbookmarked." : "Post is bookmarked.",
+            success: true,
+            isBookmarked: !isBookmarked
+        });
+
     } catch (error) {
-        console.error("error while marking the post : ", error);
+        console.error("Error while marking the post:", error);
         return res.status(500).json({
             message: "Error while bookmarking post.",
             success: false
         });
-
     }
-}
+};

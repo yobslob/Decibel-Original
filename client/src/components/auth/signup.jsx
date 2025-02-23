@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import Input from './ui/input';
-import Button from './ui/button';
+import Input from '../ui/input.jsx';
+import Button from '../ui/Button';
+import { useAuth } from '@/context/authContext';
 
 const Signup = ({ onToggle }) => {
+    const { signup } = useAuth();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -24,28 +26,10 @@ const Signup = ({ onToggle }) => {
         setErrors({});
 
         try {
-            const response = await fetch('http://localhost:3000/api/v1/user/signin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(formData)
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setErrors({ general: data.message });
-                return;
-            }
-
-            // Handle successful signup
-            alert(data.message);
+            await signup(formData);
             onToggle(); // Switch to login form
         } catch (error) {
-            setErrors({ general: 'Failed to connect to the server. Please try again.' });
+            setErrors({ general: error.message });
         } finally {
             setLoading(false);
         }
